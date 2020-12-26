@@ -4,7 +4,6 @@ let containerElementId = "replace-reddit-video-container";
 let videoElementId = "replace-reddit-video-video";
 
 setTimeout(function () {
-
     try {
 
         let redditNativeVideoElements = document.getElementsByTagName("video");
@@ -16,43 +15,84 @@ setTimeout(function () {
 
         let mutationObserver = new MutationObserver(videoElementAddedCallback);
         mutationObserver.observe(document.body, {childList: true, subtree: true});
-    } catch (e) {
+    } 
+    catch (e) {
         console.error(e);
     }
-
-
 }, 1);
 
-function replaceRedditVideoPlayer(redditNativeVideoElement) {
+function replaceRedditVideoPlayer(redditNativeVideoElem) {
 
     try {
-        if (redditNativeVideoElement.classList.contains(videoElementId)) return;
+        if (redditNativeVideoElem.classList.contains(videoElementId)) return;
 
-        let redditNativeVideoElementsSourceHtml = redditNativeVideoElement.getElementsByTagName("source")[0].outerHTML;
-        let videoUrlId = redditNativeVideoElementsSourceHtml.split("src=\"https://v.redd.it/")[1].split("/")[0];
+        let redditNativeVideoElementsSourceHtml = redditNativeVideoElem.getElementsByTagName("source")[0].outerHTML;
+        let videoUrl = redditNativeVideoElementsSourceHtml.split("src=\"")[1].split("\"")[0];
 
-        let videoContainerElement = document.createElement("div");
-        videoContainerElement.setAttribute("class", containerElementId);
+        let videoContainerElem = document.createElement("div");
+        videoContainerElem.setAttribute("class", containerElementId);
 
-        let video = document.createElement("video");
-        video.setAttribute("class", videoElementId);
+        let videoElem = document.createElement("video");
+        videoElem.setAttribute("class", `${videoElementId}`);
 
-        video.autoplay = true;
-        video.loop = true;
-        video.controls = true;
-
-        let potentialFallbackUrlSources = createPotentialFallbackUrlVideoSources(videoUrlId);
-
-        for (let i = 0; i < potentialFallbackUrlSources.length; i++) {
-            video.appendChild(potentialFallbackUrlSources[i]);
+        if (isOnCommentsPage()) {
+            videoElem.autoplay = false;
+            videoElem.muted = true;
         }
+        else {
+            videoElem.autoplay = false;
+            videoElem.muted = true;
+        }
+        
+        videoElem.loop = true;
+        videoElem.controls = true;
+        videoElem.preload = "metadata";
+        
+        videoContainerElem.appendChild(videoElem);
 
-        videoContainerElement.appendChild(video);
-
-        redditNativeVideoElement.parentElement.parentElement.parentElement.replaceWith(videoContainerElement);
+        if (videoUrl.includes("HLSPlaylist.m3u8") && Hls.isSupported()) {
+            playAsHTMLVideo(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl);
+        }
+        else {
+            playAsHTMLVideo(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl);
+        }
     } catch (e) {
         console.error(e);
     }
+}
+
+function isOnCommentsPage() {
+    return window.location.href.includes("/comments/");
+}
+
+function playAsHLSPlaylist(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl) {
+    redditNativeVideoElem.parentElement.parentElement.parentElement.replaceWith(videoContainerElem);
+
+    if (Hls.isSupported()) {
+        let hls = new Hls();
+        hls.loadSource(videoUrl);
+        hls.attachMedia(videoElem);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            if (videoElem.autoplay) videoElem.play()
+        })
+    }
+}
+
+function playAsHTMLVideo(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl) {
+    
+    let videoUrlId = parseVideoIdFromVideoUrl(videoUrl);
+    
+    let potentialFallbackUrlSources = createPotentialFallbackUrlVideoSources(videoUrlId);
+
+    for (let i = 0; i < potentialFallbackUrlSources.length; i++) {
+        videoElem.appendChild(potentialFallbackUrlSources[i]);
+    }
+
+    redditNativeVideoElem.parentElement.parentElement.parentElement.replaceWith(videoContainerElem);
+}
+
+function parseVideoIdFromVideoUrl(videoUrl) {
+    return videoUrl.split("https://v.redd.it/")[1].split("/")[0];
 }
 
 /**
