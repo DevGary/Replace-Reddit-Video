@@ -4,8 +4,18 @@
 setTimeout(function () {
 
     let redditNativeVideoElements = document.getElementsByTagName("video");
-    let redditNativeVideoElementsSourceHtml = redditNativeVideoElements[0].getElementsByTagName("source")[0].outerHTML;
-    
+    console.log(redditNativeVideoElements);
+
+    for (const redditNativeVideoElement of redditNativeVideoElements) {
+        replaceRedditVideoPlayer(redditNativeVideoElement);
+    }
+
+}, 1);
+
+function replaceRedditVideoPlayer(redditNativeVideoElement) {
+
+    let redditNativeVideoElementsSourceHtml = redditNativeVideoElement.getElementsByTagName("source")[0].outerHTML;
+
     let videoUrlId = redditNativeVideoElementsSourceHtml.split("src=\"https://v.redd.it/")[1].split("/")[0];
     let videoFallbackUrl = "https://v.redd.it/" + videoUrlId + "/DASH_480.mp4?source=fallback";
     let videoUrl = videoFallbackUrl;
@@ -31,7 +41,7 @@ setTimeout(function () {
 
     videoContainerElement.appendChild(video);
 
-    redditNativeVideoElements[0].parentElement.parentElement.parentElement.replaceWith(videoContainerElement);
+    redditNativeVideoElement.parentElement.parentElement.parentElement.replaceWith(videoContainerElement);
 
-    video.play();
-}, 1);
+    console.log(`Replaced video ${videoUrl}`)
+}
