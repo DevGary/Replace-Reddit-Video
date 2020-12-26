@@ -1,0 +1,20 @@
+﻿{
+  "manifest_version": 2,
+  "name": "Replace Reddit Video",
+  "version": "0.1",
+
+  "description": "Replaces Reddit's video player with native browser video player.",
+
+  "icons": {
+    "48": "icons/round_video_settings_white_48dp.png"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["*://*.reddit.com/*/comments/*"],
+      "js": ["replace-reddit-video.js"],
+      "css" : ["styles/replace-reddit-video.css"]
+    }
+  ]
+
+}
