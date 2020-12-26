@@ -9,10 +9,22 @@
     "48": "icons/round_video_settings_white_48dp.png"
   },
 
+  "content_security_policy": "script-src 'self' blob:; object-src 'self'",
+  "permissions": [
+    "tabs",
+    "*://*/*.m3u8*",
+    "webRequest",
+    "webRequestBlocking",
+    "storage"
+  ],
+  
   "content_scripts": [
     {
       "matches": ["*://*.reddit.com/*"],
-      "js": ["replace-reddit-video.js"],
+      "js": [
+        "replace-reddit-video.js",
+        "scripts/hls/hls.js"
+      ],
       "css" : ["styles/replace-reddit-video.css"]
     }
   ]
