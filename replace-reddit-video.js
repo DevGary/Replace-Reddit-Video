@@ -36,8 +36,8 @@ function replaceRedditVideoPlayer(redditNativeVideoElem) {
         videoElem.setAttribute("class", `${videoElementId}`);
 
         if (isOnCommentsPage()) {
-            videoElem.autoplay = false;
-            videoElem.muted = true;
+            videoElem.autoplay = true;
+            videoElem.muted = false;
         }
         else {
             videoElem.autoplay = false;
@@ -51,7 +51,7 @@ function replaceRedditVideoPlayer(redditNativeVideoElem) {
         videoContainerElem.appendChild(videoElem);
 
         if (videoUrl.includes("HLSPlaylist.m3u8") && Hls.isSupported()) {
-            playAsHTMLVideo(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl);
+            playAsHLSPlaylist(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl);
         }
         else {
             playAsHTMLVideo(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl);
@@ -66,7 +66,7 @@ function isOnCommentsPage() {
 }
 
 function playAsHLSPlaylist(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl) {
-    redditNativeVideoElem.parentElement.parentElement.parentElement.replaceWith(videoContainerElem);
+    replaceRedditVideoElem(redditNativeVideoElem, videoContainerElem);
 
     if (Hls.isSupported()) {
         let hls = new Hls();
@@ -88,6 +88,12 @@ function playAsHTMLVideo(redditNativeVideoElem, videoElem, videoContainerElem, v
         videoElem.appendChild(potentialFallbackUrlSources[i]);
     }
 
+    replaceRedditVideoElem(redditNativeVideoElem, videoContainerElem);
+}
+
+function replaceRedditVideoElem(redditNativeVideoElem, videoContainerElem) {
+    // TODO: Find out if there is better way to destroy and cleanup old player?
+    redditNativeVideoElem.src = "replace-reddit-video"; // Prevents old player from playing
     redditNativeVideoElem.parentElement.parentElement.parentElement.replaceWith(videoContainerElem);
 }
 
