@@ -1,4 +1,4 @@
-﻿// Since this is "hacky" code, surround everything with try/catch
+﻿// Since this is "hacky" code, most things are surrounded with try/catch
 
 let containerElementId = "replace-reddit-video-container";
 let videoElementId = "replace-reddit-video-video";
@@ -10,7 +10,7 @@ let commentVideoAutoplay = true;
 let commentVideoSound = true;
 let forceDirectVideo = false;
 
-let getting = chrome.storage.sync.get(null, function(items) {
+chrome.storage.sync.get(null, function(items) {
     feedVideoAutoplay = items.feedVideoAutoplay;
     feedVideoSound = items.feedVideoSound;
     forceDirectVideo = items.commentVideoAutoplay;
@@ -18,14 +18,9 @@ let getting = chrome.storage.sync.get(null, function(items) {
     forceDirectVideo = items.forceDirectVideo;
 });
 
-
-let lastUrl = location.href;
-
 setTimeout(function () {
     try {
-
         let redditNativeVideoElements = document.getElementsByTagName("video");
-        console.log(redditNativeVideoElements);
 
         for (const redditNativeVideoElement of redditNativeVideoElements) {
             replaceRedditVideoPlayer(redditNativeVideoElement);
@@ -39,7 +34,6 @@ setTimeout(function () {
         }
     } 
     catch (e) {
-        console.error(e);
     }
 }, 1);
 
@@ -111,7 +105,6 @@ function replaceRedditVideoPlayer(redditNativeVideoElem) {
             playAsHTMLVideo(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl);
         }
     } catch (e) {
-        console.error(e);
     }
 }
 
@@ -241,8 +234,6 @@ function videoElementAddedCallback(mutationRecords) {
 
                             for (const videoElement of newNodeVideoElements) {
 
-                                console.log("New Reddit Video Player element added to DOM")
-                                console.log(videoElement);
                                 try {
                                     replaceRedditVideoPlayer(videoElement);
                                 } catch (e) {
