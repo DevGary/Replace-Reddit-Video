@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Replace Reddit Video",
   "author": "DevGary",
-  "version": "0.1",
+  "version": "0.2",
 
   "description": "Replaces Reddit's native video player with open source players that are more similar to browser default.",
 
