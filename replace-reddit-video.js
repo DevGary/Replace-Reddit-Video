@@ -4,10 +4,22 @@ let containerElementId = "replace-reddit-video-container";
 let videoElementId = "replace-reddit-video-video";
 let replacedIdentifier = "replaced-by-replace-reddit-video";
 
+let feedVideoAutoplay = true;
 let feedVideoSound = true;
 let commentVideoAutoplay = true;
 let commentVideoSound = true;
 let forceDirectVideo = false;
+
+let getting = chrome.storage.sync.get(null, function(items) {
+    feedVideoAutoplay = items.feedVideoAutoplay;
+    feedVideoSound = items.feedVideoSound;
+    forceDirectVideo = items.commentVideoAutoplay;
+    commentVideoSound = items.commentVideoSound;
+    forceDirectVideo = items.forceDirectVideo;
+});
+
+
+let lastUrl = location.href;
 
 setTimeout(function () {
     try {
@@ -21,11 +33,47 @@ setTimeout(function () {
 
         let mutationObserver = new MutationObserver(videoElementAddedCallback);
         mutationObserver.observe(document.body, {childList: true, subtree: true, attributes: true});
+        
+        if (feedVideoAutoplay) {
+            enableFeedAutoplay();
+        }
     } 
     catch (e) {
         console.error(e);
     }
 }, 1);
+
+function enableFeedAutoplay() {
+
+    if (!isOnCommentsPage()) {
+
+        document.addEventListener('scroll', function (e) {
+
+            if (isOnCommentsPage()) return;
+
+            let windowHeight = window.innerHeight;
+            let videoElems = document.getElementsByClassName(videoElementId);
+
+            for (let i = 0; i < videoElems.length; i++) {
+
+                let videoElem = videoElems[i];
+                let videoElemOffsetTop = videoElem.getBoundingClientRect().top;
+
+                let videoSelected = false;
+                if (!isOnCommentsPage() && !videoSelected && videoElemOffsetTop > 0 && videoElemOffsetTop < windowHeight * 0.35) {
+                    videoElem.play();
+                    videoSelected = true;
+                } else {
+                    videoElem.pause();
+                }
+            }
+        });
+    }
+    
+    window.addEventListener('blur', function() {
+        if (!isOnCommentsPage()) pauseAllVideosExcept();
+    });
+}
 
 function replaceRedditVideoPlayer(redditNativeVideoElem) {
 
@@ -79,7 +127,16 @@ function playAsHLSPlaylist(redditNativeVideoElem, videoElem, videoContainerElem,
         hls.loadSource(videoUrl);
         hls.attachMedia(videoElem);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            if (videoElem.autoplay) videoElem.play()
+            if (videoElem.autoplay) {
+                pauseAllVideosExcept(videoElem);
+                videoElem.play()
+            }
+            
+            if (feedVideoSound) {
+                setTimeout(function () {
+                    videoElem.muted = false;
+                }, 250);
+            }
         })
     }
 }
@@ -210,9 +267,16 @@ function videoElementAddedCallback(mutationRecords) {
     );
 }
 
-let getting = chrome.storage.sync.get(null, function(items) {
-    feedVideoSound = items.feedVideoSound;
-    forceDirectVideo = items.commentVideoAutoplay;
-    commentVideoSound = items.commentVideoSound;
-    forceDirectVideo = items.forceDirectVideo;
-});
+function pauseAllVideosExcept(videoElemException) {
+
+    let videoElems = document.getElementsByClassName(videoElementId);
+
+    for (let i = 0; i < videoElems.length; i++) {
+
+        let videoElem = videoElems[i];
+
+        if (videoElem !== videoElemException) {
+            videoElem.pause();
+        }
+    }
+}
