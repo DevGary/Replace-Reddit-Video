@@ -10,7 +10,6 @@
     "48": "icons/round_video_settings_white_48dp.png"
   },
 
-  "content_security_policy": "script-src 'self' blob:; object-src 'self'",
   "permissions": [
     "storage"
   ],
