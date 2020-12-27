@@ -5,17 +5,18 @@ let videoElementId = "replace-reddit-video-video";
 let replacedIdentifier = "replaced-by-replace-reddit-video";
 
 let feedVideoAutoplay = true;
-let feedVideoSound = true;
+let feedVideoSound = false;
 let commentVideoAutoplay = true;
-let commentVideoSound = true;
+let commentVideoSound = false;
 let forceDirectVideo = false;
 
 chrome.storage.sync.get(null, function(items) {
-    feedVideoAutoplay = items.feedVideoAutoplay;
-    feedVideoSound = items.feedVideoSound;
-    forceDirectVideo = items.commentVideoAutoplay;
-    commentVideoSound = items.commentVideoSound;
-    forceDirectVideo = items.forceDirectVideo;
+    debugger;
+    feedVideoAutoplay = items.feedVideoAutoplay !== undefined ? items.feedVideoAutoplay : feedVideoAutoplay;
+    feedVideoSound = items.feedVideoSound !== undefined ? items.feedVideoSound : feedVideoSound;
+    commentVideoAutoplay = items.commentVideoAutoplay !== undefined ? items.commentVideoAutoplay : commentVideoAutoplay;
+    commentVideoSound = items.commentVideoSound !== undefined ? items.commentVideoSound : commentVideoSound;
+    forceDirectVideo = items.forceDirectVideo !== undefined ? items.forceDirectVideo : forceDirectVideo;
 });
 
 setTimeout(function () {
