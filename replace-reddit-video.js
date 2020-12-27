@@ -128,11 +128,11 @@ function playAsHLSPlaylist(redditNativeVideoElem, videoElem, videoContainerElem,
 
             availableLevels = data.levels;
             
-            // if (forceHighestQuality) {
-            //     if (data.levels !== undefined) {
-            //         hls.firstLevel = data.levels.length - 1;
-            //     }
-            // }
+            if (forceHighestQuality) {
+                if (data.levels !== undefined) {
+                    hls.firstLevel = data.levels.length - 1;
+                }
+            }
             
             if (videoElem.autoplay) {
                 pauseAllVideosExcept(videoElem);
