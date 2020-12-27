@@ -9,14 +9,15 @@ let feedVideoSound = false;
 let commentVideoAutoplay = true;
 let commentVideoSound = false;
 let forceDirectVideo = false;
+let forceHighestQuality = true;
 
 chrome.storage.sync.get(null, function(items) {
-    debugger;
     feedVideoAutoplay = items.feedVideoAutoplay !== undefined ? items.feedVideoAutoplay : feedVideoAutoplay;
     feedVideoSound = items.feedVideoSound !== undefined ? items.feedVideoSound : feedVideoSound;
     commentVideoAutoplay = items.commentVideoAutoplay !== undefined ? items.commentVideoAutoplay : commentVideoAutoplay;
     commentVideoSound = items.commentVideoSound !== undefined ? items.commentVideoSound : commentVideoSound;
     forceDirectVideo = items.forceDirectVideo !== undefined ? items.forceDirectVideo : forceDirectVideo;
+    forceHighestQuality = items.forceHighestQuality !== undefined ? items.forceHighestQuality : forceHighestQuality;
 });
 
 setTimeout(function () {
@@ -120,7 +121,19 @@ function playAsHLSPlaylist(redditNativeVideoElem, videoElem, videoContainerElem,
         let hls = new Hls();
         hls.loadSource(videoUrl);
         hls.attachMedia(videoElem);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        
+        let availableLevels;
+        
+        hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+
+            availableLevels = data.levels;
+            
+            // if (forceHighestQuality) {
+            //     if (data.levels !== undefined) {
+            //         hls.firstLevel = data.levels.length - 1;
+            //     }
+            // }
+            
             if (videoElem.autoplay) {
                 pauseAllVideosExcept(videoElem);
                 videoElem.play()
@@ -131,6 +144,19 @@ function playAsHLSPlaylist(redditNativeVideoElem, videoElem, videoContainerElem,
                     videoElem.muted = false;
                 }, 250);
             }
+        })     
+        
+        hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
+            
+            if (availableLevels !== undefined) {
+                
+                let maxLevel = availableLevels.length - 1;
+                
+                if (forceHighestQuality && data.level !== maxLevel) {
+                    
+                    hls.currentLevel = availableLevels.length - 1;
+                }
+            } 
         })
     }
 }
