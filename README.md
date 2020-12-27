@@ -1,5 +1,5 @@
 # Replace Reddit Video
-Replaces Reddit's native video player with players that are more similar to browser default.
+Replaces Reddit's native video player with a better player and added some tweaks to improve usability.
 
 Uses [hls-js](https://github.com/video-dev/hls.js/) and native HTML 5 video player
 
