@@ -37,12 +37,12 @@ function replaceRedditVideoPlayer(redditNativeVideoElem) {
         videoElem.setAttribute("class", `${videoElementId}`);
 
         if (isOnCommentsPage()) {
-            videoElem.autoplay = true;
-            videoElem.muted = false;
+            videoElem.autoplay = commentVideoAutoplay;
+            videoElem.muted = !commentVideoSound;
         }
         else {
             videoElem.autoplay = false;
-            videoElem.muted = true;
+            videoElem.muted = !feedVideoSound;
         }
         
         videoElem.loop = true;
