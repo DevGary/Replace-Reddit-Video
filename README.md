@@ -6,6 +6,3 @@ Uses [hls-js](https://github.com/video-dev/hls.js/) and native HTML 5 video play
 # Preview
 ![After 1](https://i.imgur.com/gwvMBza.png)
 ![After 2](https://i.imgur.com/cHaqJ9L.png)
-
-# Before
-![Before 1](https://i.imgur.com/DnyfJet.png)
