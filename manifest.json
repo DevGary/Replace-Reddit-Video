@@ -1,6 +1,7 @@
 ﻿{
   "manifest_version": 2,
   "name": "Replace Reddit Video",
+  "author": "DevGary",
   "version": "0.1",
 
   "description": "Replaces Reddit's video player with native browser video player.",
@@ -11,12 +12,18 @@
 
   "content_security_policy": "script-src 'self' blob:; object-src 'self'",
   "permissions": [
-    "tabs",
-    "*://*/*.m3u8*",
-    "webRequest",
-    "webRequestBlocking",
     "storage"
   ],
+
+  "options_ui": {
+    "page": "settings/options.html"
+  },
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "replace-reddit-video@site.local"
+    }
+  },
   
   "content_scripts": [
     {

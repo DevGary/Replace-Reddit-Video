@@ -4,6 +4,11 @@ let containerElementId = "replace-reddit-video-container";
 let videoElementId = "replace-reddit-video-video";
 let replacedIdentifier = "replaced-by-replace-reddit-video";
 
+let feedVideoSound = true;
+let commentVideoAutoplay = true;
+let commentVideoSound = true;
+let forceDirectVideo = false;
+
 setTimeout(function () {
     try {
 
@@ -37,12 +42,12 @@ function replaceRedditVideoPlayer(redditNativeVideoElem) {
         videoElem.setAttribute("class", `${videoElementId}`);
 
         if (isOnCommentsPage()) {
-            videoElem.autoplay = true;
-            videoElem.muted = false;
+            videoElem.autoplay = commentVideoAutoplay;
+            videoElem.muted = !commentVideoSound;
         }
         else {
             videoElem.autoplay = false;
-            videoElem.muted = true;
+            videoElem.muted = !feedVideoSound;
         }
         
         videoElem.loop = true;
@@ -51,7 +56,7 @@ function replaceRedditVideoPlayer(redditNativeVideoElem) {
         
         videoContainerElem.appendChild(videoElem);
 
-        if (videoUrl.includes("HLSPlaylist.m3u8") && Hls.isSupported()) {
+        if (!forceDirectVideo && videoUrl.includes("HLSPlaylist.m3u8") && Hls.isSupported()) {
             playAsHLSPlaylist(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl);
         }
         else {
@@ -204,3 +209,10 @@ function videoElementAddedCallback(mutationRecords) {
         }
     );
 }
+
+let getting = chrome.storage.sync.get(null, function(items) {
+    feedVideoSound = items.feedVideoSound;
+    forceDirectVideo = items.commentVideoAutoplay;
+    commentVideoSound = items.commentVideoSound;
+    forceDirectVideo = items.forceDirectVideo;
+});

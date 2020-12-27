@@ -1,0 +1,57 @@
+﻿<!DOCTYPE html>
+<html>
+<head><title>Options</title></head>
+<body>
+
+<h4>Feed</h4>
+
+<div>
+    <label>
+        <input type="checkbox" disabled id="feedVideoAutoplay">
+        Auto-play (Coming in the future)
+    </label>
+</div>
+<div>
+
+    <label>
+        <input type="checkbox" id="feedVideoSound">
+        Auto-sound
+    </label>
+</div>
+
+<h4>Comments</h4>
+<div>
+    <label>
+        <input type="checkbox" id="commentVideoAutoplay">
+        Auto-play
+    </label>
+</div>
+
+<div>
+    <label>
+        <input type="checkbox" id="commentVideoSound">
+        Auto-sound
+    </label>
+</div>
+
+<h4>Other</h4>
+
+<div>
+    <label>
+        <input type="checkbox" id="forceDirectVideo">
+        [BETA] Play direct video instead of variable quality stream.
+        <ul>
+            <li>Video should play in highest quality</li>
+            <li>Video will be downloadable</li>
+            <li>Audio won't work</li>
+            <li>Some videos, particularly older ones may not work</li>
+        </ul>
+    </label>
+</div>
+
+<div id="status" style="margin-top: 32px"></div>
+<button id="save">Save</button>
+
+<script src="options.js"></script>
+</body>
+</html>
