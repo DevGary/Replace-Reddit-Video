@@ -4,7 +4,7 @@
   "author": "DevGary",
   "version": "0.1",
 
-  "description": "Replaces Reddit's video player with native browser video player.",
+  "description": "Replaces Reddit's native video player with open source players that are more similar to browser default.",
 
   "icons": {
     "48": "icons/round_video_settings_white_48dp.png"
