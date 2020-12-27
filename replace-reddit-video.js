@@ -85,17 +85,19 @@ function replaceRedditVideoPlayer(redditNativeVideoElem) {
         let videoElem = document.createElement("video");
         videoElem.setAttribute("class", `${videoElementId}`);
 
-        if (isOnCommentsPage()) {
-            videoElem.autoplay = commentVideoAutoplay;
-            videoElem.muted = !commentVideoSound;
+        // Always show controls if not autoplaying
+        if (!shouldAutoplay()) {
+            videoElem.controls = true;
         }
         else {
-            videoElem.autoplay = false;
-            videoElem.muted = !feedVideoSound;
+            videoElem.addEventListener("mouseover", function () {
+                videoElem.controls = true;
+            }, false);
         }
-        
+
+        videoElem.autoplay = shouldAutoplay();
+        videoElem.muted = !shouldAutoSound();
         videoElem.loop = true;
-        videoElem.controls = true;
         videoElem.preload = "metadata";
         
         videoContainerElem.appendChild(videoElem);
@@ -112,6 +114,14 @@ function replaceRedditVideoPlayer(redditNativeVideoElem) {
 
 function isOnCommentsPage() {
     return window.location.href.includes("/comments/");
+}
+
+function shouldAutoplay() {
+    return isOnCommentsPage() ? commentVideoAutoplay : feedVideoAutoplay;
+}
+
+function shouldAutoSound() {
+    return isOnCommentsPage() ? commentVideoSound : feedVideoSound;
 }
 
 function playAsHLSPlaylist(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl) {
