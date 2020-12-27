@@ -2,6 +2,7 @@
 
 let containerElementId = "replace-reddit-video-container";
 let videoElementId = "replace-reddit-video-video";
+let replacedIdentifier = "replaced-by-replace-reddit-video";
 
 setTimeout(function () {
     try {
@@ -14,7 +15,7 @@ setTimeout(function () {
         }
 
         let mutationObserver = new MutationObserver(videoElementAddedCallback);
-        mutationObserver.observe(document.body, {childList: true, subtree: true});
+        mutationObserver.observe(document.body, {childList: true, subtree: true, attributes: true});
     } 
     catch (e) {
         console.error(e);
@@ -93,8 +94,16 @@ function playAsHTMLVideo(redditNativeVideoElem, videoElem, videoContainerElem, v
 
 function replaceRedditVideoElem(redditNativeVideoElem, videoContainerElem) {
     // TODO: Find out if there is better way to destroy and cleanup old player?
-    redditNativeVideoElem.src = "replace-reddit-video"; // Prevents old player from playing
+    redditNativeVideoElem.children[0].src = replacedIdentifier; // Prevents old player from playing
+    redditNativeVideoElem.src = replacedIdentifier; // Prevents old player from playing
+    redditNativeVideoElem.play = new function(){}; // Prevents old player from playing
+  
     redditNativeVideoElem.parentElement.parentElement.parentElement.replaceWith(videoContainerElem);
+    videoContainerElem.append(redditNativeVideoElem);
+    
+    // For some reason, if we completely remove the element, the audio will start/stop playing on scroll.
+    // There is probably some function triggered on scroll that re-initializes the video if it is gone 
+    redditNativeVideoElem.style.display = "none";
 }
 
 function parseVideoIdFromVideoUrl(videoUrl) {
@@ -181,6 +190,16 @@ function videoElementAddedCallback(mutationRecords) {
                         }
                     }
                 });
+            }
+            else if (
+                muttn.type === 'attributes' && 
+                muttn.attributeName === 'src' && 
+                muttn.target.tagName === "VIDEO"
+                ) {
+
+                if (muttn.target.style.display === "none" && !muttn.target.src.includes(replacedIdentifier)) {
+                    muttn.target.src = replacedIdentifier;
+                }
             }
         }
     );
