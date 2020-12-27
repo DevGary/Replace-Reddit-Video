@@ -1,10 +1,12 @@
 ﻿function save() {
+    let feedVideoAutoplay = document.getElementById('feedVideoAutoplay').checked;
     let feedVideoSound = document.getElementById('feedVideoSound').checked;
     let commentVideoAutoplay = document.getElementById('commentVideoAutoplay').checked;
     let commentVideoSound = document.getElementById('commentVideoSound').checked;
     let forceDirectVideo = document.getElementById('forceDirectVideo').checked;
     
     chrome.storage.sync.set({
+        feedVideoAutoplay: feedVideoAutoplay,
         feedVideoSound: feedVideoSound,
         commentVideoAutoplay: commentVideoAutoplay,
         commentVideoSound: commentVideoSound,
@@ -22,11 +24,13 @@
 
 function restore() {
     chrome.storage.sync.get({
+        feedVideoAutoplay: true,
         feedVideoSound: false,
         commentVideoAutoplay: true,
         commentVideoSound: false,
         forceDirectVideo: false
     }, function(items) {
+        document.getElementById('feedVideoAutoplay').checked = items.feedVideoAutoplay;
         document.getElementById('feedVideoSound').checked = items.feedVideoSound;
         document.getElementById('commentVideoAutoplay').checked = items.commentVideoAutoplay;
         document.getElementById('commentVideoSound').checked = items.commentVideoSound;
