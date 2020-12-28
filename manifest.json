@@ -18,12 +18,6 @@
     "page": "settings/options.html"
   },
 
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "replace-reddit-video@site.local"
-    }
-  },
-  
   "content_scripts": [
     {
       "matches": ["*://*.reddit.com/*"],
