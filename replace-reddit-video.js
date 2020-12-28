@@ -43,6 +43,7 @@ function enableFeedAutoplay() {
 
     if (!isOnCommentsPage()) {
 
+        // TODO: Throttle events to reduce computational usage
         document.addEventListener('scroll', function (e) {
 
             if (isOnCommentsPage()) return;
@@ -102,7 +103,7 @@ function replaceRedditVideoPlayer(redditNativeVideoElem) {
         
         videoContainerElem.appendChild(videoElem);
 
-        if (!forceDirectVideo && videoUrl.includes("HLSPlaylist.m3u8") && Hls.isSupported()) {
+        if (!forceDirectVideo && isHLSPlaylist(videoUrl) && Hls.isSupported()) {
             playAsHLSPlaylist(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl);
         }
         else {
@@ -124,50 +125,57 @@ function shouldAutoSound() {
     return isOnCommentsPage() ? commentVideoSound : feedVideoSound;
 }
 
+function isHLSPlaylist(videoUrl) {
+    return videoUrl.includes("HLSPlaylist.m3u8");
+}
+
 function playAsHLSPlaylist(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl) {
     replaceRedditVideoElem(redditNativeVideoElem, videoContainerElem);
 
     if (Hls.isSupported()) {
         let hls = new Hls();
-        hls.loadSource(videoUrl);
+        
         hls.attachMedia(videoElem);
-        
-        let availableLevels;
-        
-        hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+        hls.on(Hls.Events.MEDIA_ATTACHED, () => {
 
-            availableLevels = data.levels;
-            
-            if (forceHighestQuality) {
-                if (data.levels !== undefined) {
-                    hls.firstLevel = data.levels.length - 1;
+            let availableLevels;
+            hls.loadSource(videoUrl);
+
+            hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+
+                availableLevels = data.levels;
+
+                if (forceHighestQuality) {
+                    if (data.levels !== undefined) {
+                        hls.firstLevel = data.levels.length - 1;
+                    }
                 }
-            }
-            
-            if (videoElem.autoplay) {
-                pauseAllVideosExcept(videoElem);
-                videoElem.play()
-            }
-            
-            if (feedVideoSound) {
-                setTimeout(function () {
-                    videoElem.muted = false;
-                }, 250);
-            }
-        })     
-        
-        hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
-            
-            if (availableLevels !== undefined) {
-                
-                let maxLevel = availableLevels.length - 1;
-                
-                if (forceHighestQuality && data.level !== maxLevel) {
-                    
-                    hls.currentLevel = availableLevels.length - 1;
+
+                if (videoElem.autoplay) {
+                    pauseAllVideosExcept(videoElem);
+                    videoElem.play()
                 }
-            } 
-        })
+
+                if (feedVideoSound) {
+                    setTimeout(function () {
+                        videoElem.muted = false;
+                    }, 250);
+                }
+            })
+
+            hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
+
+                if (availableLevels !== undefined) {
+
+                    let maxLevel = availableLevels.length - 1;
+
+                    if (forceHighestQuality && data.level !== maxLevel) {
+
+                        hls.currentLevel = availableLevels.length - 1;
+                    }
+                }
+            })
+        });
     }
 }
 
