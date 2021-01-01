@@ -194,6 +194,7 @@ function playAsHTMLVideo(redditNativeVideoElem, videoElem, videoContainerElem, v
 
 function replaceRedditVideoElem(redditNativeVideoElem, videoContainerElem) {
     // TODO: Find out if there is better way to destroy and cleanup old player?
+    if (redditNativeVideoElem.classList.contains(videoElementId)) return;
     redditNativeVideoElem.children[0].src = replacedIdentifier; // Prevents old player from playing
     redditNativeVideoElem.src = replacedIdentifier; // Prevents old player from playing
     redditNativeVideoElem.play = new function(){}; // Prevents old player from playing
