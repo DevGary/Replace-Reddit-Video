@@ -57,7 +57,7 @@ function enableFeedAutoplay() {
                 let videoElemOffsetTop = videoElem.getBoundingClientRect().top;
 
                 let videoSelected = false;
-                if (!isOnCommentsPage() && !videoSelected && videoElemOffsetTop > 0 && videoElemOffsetTop < windowHeight * 0.35) {
+                if (!isOnCommentsPage() && !videoSelected && videoElemOffsetTop > 0 && videoElemOffsetTop < windowHeight * 0.4) {
                     videoElem.play();
                     videoSelected = true;
                 } else {
