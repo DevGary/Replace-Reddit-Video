@@ -100,14 +100,15 @@ function replaceRedditVideoPlayer(redditNativeVideoElem) {
         videoElem.muted = !shouldAutoSound();
         videoElem.loop = true;
         videoElem.preload = "metadata";
+        videoElem.setAttribute("video_url", videoUrl);
         
         videoContainerElem.appendChild(videoElem);
 
         if (!forceDirectVideo && isHLSPlaylist(videoUrl) && Hls.isSupported()) {
-            playAsHLSPlaylist(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl);
+            replaceWithHLSPlayer(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl);
         }
         else {
-            playAsHTMLVideo(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl);
+            replaceWithHTMLPlayer(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl);
         }
     } catch (e) {
     }
@@ -129,57 +130,92 @@ function isHLSPlaylist(videoUrl) {
     return videoUrl.includes("HLSPlaylist.m3u8");
 }
 
-function playAsHLSPlaylist(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl) {
+function replaceWithHLSPlayer(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl) {
+
     replaceRedditVideoElem(redditNativeVideoElem, videoContainerElem);
 
-    if (Hls.isSupported()) {
-        let hls = new Hls();
-        
-        hls.attachMedia(videoElem);
-        hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-
-            let availableLevels;
-            hls.loadSource(videoUrl);
-
-            hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
-
-                availableLevels = data.levels;
-
-                if (forceHighestQuality) {
-                    if (data.levels !== undefined) {
-                        hls.firstLevel = data.levels.length - 1;
-                    }
-                }
-
-                if (videoElem.autoplay) {
-                    pauseAllVideosExcept(videoElem);
-                    videoElem.play()
-                }
-
-                if (feedVideoSound) {
-                    setTimeout(function () {
-                        videoElem.muted = false;
-                    }, 250);
-                }
-            })
-
-            hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
-
-                if (availableLevels !== undefined) {
-
-                    let maxLevel = availableLevels.length - 1;
-
-                    if (forceHighestQuality && data.level !== maxLevel) {
-
-                        hls.currentLevel = availableLevels.length - 1;
-                    }
-                }
-            })
-        });
-    }
+    playWithHLSPlayer(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl);
 }
 
-function playAsHTMLVideo(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl) {
+function playWithHLSPlayer(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl) {
+    let hls = new Hls();
+
+    hls.attachMedia(videoElem);
+    hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+
+        let availableLevels;
+        hls.loadSource(videoUrl);
+        console.log(`Attempting to play with HLS: ${videoUrl}`);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+
+            availableLevels = data.levels;
+
+            if (forceHighestQuality) {
+                if (data.levels !== undefined) {
+                    hls.firstLevel = data.levels.length - 1;
+                }
+            }
+
+            if (videoElem.autoplay) {
+                pauseAllVideosExcept(videoElem);
+                videoElem.play()
+            }
+
+            if (feedVideoSound) {
+                setTimeout(function () {
+                    videoElem.muted = false;
+                }, 250);
+            }
+        })
+
+        hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
+
+            if (availableLevels !== undefined) {
+
+                let maxLevel = availableLevels.length - 1;
+
+                if (forceHighestQuality && data.level !== maxLevel) {
+
+                    hls.currentLevel = availableLevels.length - 1;
+                }
+            }
+        })
+
+        hls.on(Hls.Events.ERROR, function (event, data) {
+            console.log("HLS ERROR:");
+            console.table(data);
+
+            // TODO: Investigate this. 
+            // Sometimes the player encounters a levelLoadError and cannot recover so the current solution is to reinitialize the player
+            // I have only encountered it in the feed and I have autoplay on so perhaps the hacky auto play/pause code is causing issues
+            if (data.details === "levelLoadError") {
+                console.log('levelLoadError encountered, trying to reinitiate hls player');
+                hls.destroy();
+                playWithHLSPlayer(redditNativeVideoElem, videoElem, videoContainerElem, videoElem.getAttribute("video_url"));
+            }
+            else if (data.fatal) {
+                switch (data.type) {
+                    case Hls.ErrorTypes.NETWORK_ERROR:
+                        // try to recover network error
+                        console.log('fatal network error encountered, try to recover');
+                        hls.startLoad();
+                        break;
+                    case Hls.ErrorTypes.MEDIA_ERROR:
+                        console.log('fatal media error encountered, try to recover');
+                        hls.recoverMediaError();
+                        break;
+                    default:
+                        console.log('fatal network error encountered, cannot recover');
+                        hls.destroy();
+                        break;
+                }
+            }
+        });
+    });
+}
+
+function replaceWithHTMLPlayer(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl) {
     
     let videoUrlId = parseVideoIdFromVideoUrl(videoUrl);
     
@@ -295,8 +331,18 @@ function videoElementAddedCallback(mutationRecords) {
                 muttn.attributeName === 'src' && 
                 muttn.target.tagName === "VIDEO"
                 ) {
-
-                if (muttn.target.style.display === "none" && !muttn.target.src.includes(replacedIdentifier)) {
+                
+                let isNotReplacedSrcAttribute = !muttn.target.src.includes(replacedIdentifier);
+                
+                // For debugging
+                if (isNotReplacedSrcAttribute) {
+                    let currentReplacedSrc = muttn.target.getAttribute("replaced_src");
+                    let newReplacedSrc = currentReplacedSrc + " , " + muttn.target.src;
+                    
+                    muttn.target.setAttribute("replaced_src", newReplacedSrc);
+                }
+                
+                if (muttn.target.style.display === "none" && isNotReplacedSrcAttribute) {
                     muttn.target.src = replacedIdentifier;
                 }
             }
