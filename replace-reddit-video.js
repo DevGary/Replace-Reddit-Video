@@ -174,10 +174,16 @@ function playWithHLSPlayer(redditNativeVideoElem, videoElem, videoContainerElem,
             if (availableLevels !== undefined) {
 
                 let maxLevel = availableLevels.length - 1;
+                
+                console.log(`Trying to switch to level ${data.level}`);
 
                 if (forceHighestQuality && data.level !== maxLevel) {
 
+                    console.log(`Forced to switch to max level ${maxLevel}`);
                     hls.currentLevel = availableLevels.length - 1;
+                }
+                else {
+                    console.log(`Switched to level ${data.level}`);
                 }
             }
         })
