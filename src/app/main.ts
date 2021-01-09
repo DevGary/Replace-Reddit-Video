@@ -1,4 +1,9 @@
-﻿// Since this is "hacky" code, most things are surrounded with try/catch
+﻿// @ts-nocheck
+// TODO: Convert to Typescript
+
+import { Hls } from "../lib/hls-js/hls";
+
+// Since this is "hacky" code, most things are surrounded with try/catch
 
 let containerElementId = "replace-reddit-video-container";
 let videoElementId = "replace-reddit-video-video";
@@ -30,11 +35,11 @@ setTimeout(function () {
 
         let mutationObserver = new MutationObserver(videoElementAddedCallback);
         mutationObserver.observe(document.body, {childList: true, subtree: true, attributes: true});
-        
+
         if (feedVideoAutoplay) {
             enableFeedAutoplay();
         }
-    } 
+    }
     catch (e) {
     }
 }, 1);
@@ -66,7 +71,7 @@ function enableFeedAutoplay() {
             }
         });
     }
-    
+
     window.addEventListener('blur', function() {
         if (!isOnCommentsPage()) pauseAllVideosExcept();
     });
@@ -101,7 +106,7 @@ function replaceRedditVideoPlayer(redditNativeVideoElem) {
         videoElem.loop = true;
         videoElem.preload = "metadata";
         videoElem.setAttribute("video_url", videoUrl);
-        
+
         videoContainerElem.appendChild(videoElem);
 
         if (!forceDirectVideo && isHLSPlaylist(videoUrl) && Hls.isSupported()) {
@@ -174,7 +179,7 @@ function playWithHLSPlayer(redditNativeVideoElem, videoElem, videoContainerElem,
             if (availableLevels !== undefined) {
 
                 let maxLevel = availableLevels.length - 1;
-                
+
                 console.log(`Trying to switch to level ${data.level}`);
 
                 if (forceHighestQuality && data.level !== maxLevel) {
@@ -222,9 +227,9 @@ function playWithHLSPlayer(redditNativeVideoElem, videoElem, videoContainerElem,
 }
 
 function replaceWithHTMLPlayer(redditNativeVideoElem, videoElem, videoContainerElem, videoUrl) {
-    
+
     let videoUrlId = parseVideoIdFromVideoUrl(videoUrl);
-    
+
     let potentialFallbackUrlSources = createPotentialFallbackUrlVideoSources(videoUrlId);
 
     for (let i = 0; i < potentialFallbackUrlSources.length; i++) {
@@ -240,10 +245,10 @@ function replaceRedditVideoElem(redditNativeVideoElem, videoContainerElem) {
     redditNativeVideoElem.children[0].src = replacedIdentifier; // Prevents old player from playing
     redditNativeVideoElem.src = replacedIdentifier; // Prevents old player from playing
     redditNativeVideoElem.play = new function(){}; // Prevents old player from playing
-  
+
     redditNativeVideoElem.parentElement.parentElement.parentElement.replaceWith(videoContainerElem);
     videoContainerElem.append(redditNativeVideoElem);
-    
+
     // For some reason, if we completely remove the element, the audio will start/stop playing on scroll.
     // There is probably some function triggered on scroll that re-initializes the video if it is gone 
     redditNativeVideoElem.style.display = "none";
@@ -314,7 +319,7 @@ function videoElementAddedCallback(mutationRecords) {
     mutationRecords.forEach(muttn => {
             if (muttn.type === "childList" && typeof muttn.addedNodes === "object") {
                 muttn.addedNodes.forEach(newNode => {
-                   
+
                     if (newNode.tagName) {
                         let newNodeVideoElements = newNode.getElementsByTagName("video");
 
@@ -333,21 +338,21 @@ function videoElementAddedCallback(mutationRecords) {
                 });
             }
             else if (
-                muttn.type === 'attributes' && 
-                muttn.attributeName === 'src' && 
+                muttn.type === 'attributes' &&
+                muttn.attributeName === 'src' &&
                 muttn.target.tagName === "VIDEO"
-                ) {
-                
+            ) {
+
                 let isNotReplacedSrcAttribute = !muttn.target.src.includes(replacedIdentifier);
-                
+
                 // For debugging
                 if (isNotReplacedSrcAttribute) {
                     let currentReplacedSrc = muttn.target.getAttribute("replaced_src");
                     let newReplacedSrc = currentReplacedSrc + " , " + muttn.target.src;
-                    
+
                     muttn.target.setAttribute("replaced_src", newReplacedSrc);
                 }
-                
+
                 if (muttn.target.style.display === "none" && isNotReplacedSrcAttribute) {
                     muttn.target.src = replacedIdentifier;
                 }
