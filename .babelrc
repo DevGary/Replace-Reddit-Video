@@ -1,3 +1,7 @@
 ﻿{
-  "presets": ["@babel/preset-env"]
+  "presets": ["@babel/preset-env"],
+  "plugins": [
+    "transform-custom-element-classes",
+    "transform-es2015-classes"
+  ]
 }

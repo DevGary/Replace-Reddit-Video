@@ -8,5 +8,5 @@ module.exports = merge(common, {
         minimize: false
     },
 
-    watch: false,
+    watch: true,
 });
