@@ -24,7 +24,6 @@ module.exports = {
             patterns: [
                 { from: './src/assets', to: './assets' },
                 { from: './src/settings', to: './settings' },
-                { from: './src/lib', to: './lib' },
                 { from: './src/styles', to: './styles' },
             ],
         }),

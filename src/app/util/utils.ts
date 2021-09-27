@@ -64,4 +64,12 @@
 
         return source;
     }
+
+    static buildVideoSource(videoUrl: string) : HTMLSourceElement {
+        let source = document.createElement("source");
+        source.type = "video/mp4";
+        source.src = videoUrl;
+
+        return source;
+    }
 }

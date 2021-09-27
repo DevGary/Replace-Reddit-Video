@@ -19,8 +19,7 @@
         "*://*.reddit.com/*"
       ],
       "js": [
-        "replace-reddit-video.js",
-        "lib/hls-js/hls.js"
+        "replace-reddit-video.js"
       ],
       "css" : [
         "styles/replace-reddit-video.css"

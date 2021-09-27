@@ -1,12 +1,7 @@
-﻿// TODO: Convert to Typescript
-
-import { PostElemWrapperFactory } from "./model/post-elem-wrapper-factory";
+﻿import { PostElemWrapperFactory } from "./model/post-elem-wrapper-factory";
 import { ReplaceRedditVideoManager } from "./component/replace-reddit-video-manager";
 import { ReplaceRedditVideoElem } from "./model/replace-reddit-video-elem";
-
-// Since this is "hacky" code, most things are surrounded with try/catch
-
-let replacedIdentifier = "replaced-by-replace-reddit-video";
+import { RedditVideoPostElemWrapper } from "./model/reddit-video-post-elem-wrapper";
 
 let feedVideoAutoplay = true;
 let feedVideoSound = false;
@@ -17,7 +12,6 @@ let forceHighestQuality = true;
 let postElemFactory = new PostElemWrapperFactory();
 let replaceRedditVideoManager = new ReplaceRedditVideoManager(document);
 
-// @ts-ignore
 chrome.storage.sync.get(null, function(items) {
     feedVideoAutoplay = items.feedVideoAutoplay !== undefined ? items.feedVideoAutoplay : feedVideoAutoplay;
     feedVideoSound = items.feedVideoSound !== undefined ? items.feedVideoSound : feedVideoSound;
@@ -32,6 +26,7 @@ main();
 function main() {
     
     let videoPostElems = postElemFactory.createManyFromDocument(document);
+    videoPostElems.forEach(e => setupRedditVideoPostElemWrapper(e));
     replaceRedditVideoManager.replaceElements(videoPostElems);
     
     let mutationObserver = new MutationObserver(videoElementAddedCallback);
@@ -42,19 +37,25 @@ function main() {
     }
 }
 
+function setupRedditVideoPostElemWrapper(wrapper: RedditVideoPostElemWrapper) {
+    wrapper.autoplay = shouldAutoplay();
+    wrapper.muted = !shouldAutoSound();
+    wrapper.forceDirectVideoPlayer = forceDirectVideo;
+    wrapper.forceHighestQuality = forceHighestQuality;
+}
+
 function enableFeedAutoplay() {
 
     if (!isOnCommentsPage()) {
 
         let lastOnScrollEvent = 0;
-        // TODO: Throttle events to reduce computational usage
         // TODO: [!!!] Don't autoplay if manually paused
         document.addEventListener('scroll', function (e) {
 
             if (isOnCommentsPage()) return;
             let now = new Date().getTime();
             
-            if (now - lastOnScrollEvent < 500) return;
+            if (now - lastOnScrollEvent < 250) return;
             lastOnScrollEvent = now;
             
             let windowHeight = window.innerHeight;
@@ -67,10 +68,14 @@ function enableFeedAutoplay() {
                 let replaceRedditVideoElem = videoElemWrappers[i].getReplaceRedditVideoElem();
                 
                 if (replaceRedditVideoElem?.videoElem !== undefined) {
-                    let videoElemOffsetTop = replaceRedditVideoElem.videoElem.getBoundingClientRect().top;
-
+           
                     if (selectedVideoElem === undefined) {
-                        if (!isOnCommentsPage() && videoElemOffsetTop > 0 && videoElemOffsetTop < windowHeight * 0.5) {
+
+                        let headerHeight = document.getElementsByTagName("header")[0].offsetHeight;
+                        let videoElemOffsetTopFromVisibleContainer = replaceRedditVideoElem.videoElem.getBoundingClientRect().top - headerHeight;
+                        
+                        console.log(`videoElemOffsetTop= ${videoElemOffsetTopFromVisibleContainer}, windowHeight = ${windowHeight}`)
+                        if (!isOnCommentsPage() && videoElemOffsetTopFromVisibleContainer > 0 && videoElemOffsetTopFromVisibleContainer < windowHeight * 0.55) {
                             replaceRedditVideoElem.play();
                             selectedVideoElem = replaceRedditVideoElem;
                         }
@@ -106,38 +111,13 @@ function videoElementAddedCallback(mutationRecords: MutationRecord[], mutationOb
                     if (newNode instanceof Element && newNode.tagName) {
                         try {
                             let videoPostElem = postElemFactory.createFromElement(newNode);
+                            setupRedditVideoPostElemWrapper(videoPostElem);
                             replaceRedditVideoManager.replaceElements([videoPostElem]);
                         } catch (e) {
 
                         }
                     }
                 });
-            }
-            else if (
-                mutation.target instanceof Element &&
-                mutation.type === 'attributes' &&
-                mutation.attributeName === 'src' &&
-                mutation.target.tagName === "VIDEO"
-            ) {
-
-                let mutationTargetElem = mutation.target as Element;
-                // @ts-ignore
-                let isNotReplacedSrcAttribute = !mutation.target.src.includes(replacedIdentifier);
-
-                // For debugging
-                if (isNotReplacedSrcAttribute) {
-                    let currentReplacedSrc = mutation.target.getAttribute("replaced_src");
-                    // @ts-ignore
-                    let newReplacedSrc = currentReplacedSrc + " , " + mutation.target.src;
-
-                    mutation.target.setAttribute("replaced_src", newReplacedSrc);
-                }
-
-                // @ts-ignore
-                if (mutationTargetElem.style.display === "none" && isNotReplacedSrcAttribute) {
-                    // @ts-ignore
-                    mutationTargetElem.src = replacedIdentifier;
-                }
             }
         }
     );

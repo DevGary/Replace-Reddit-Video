@@ -1,11 +1,11 @@
-﻿.replace-reddit-video-container {
+﻿.replace-reddit-video {
     background: black;
     max-height: 512px;
     display: block;
     z-index: 1;
 }
 
-.replace-reddit-video-video {
+.replace-reddit-video-player {
     width: 100%;
     height: 100%;
     object-fit: contain;

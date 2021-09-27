@@ -15,7 +15,7 @@ export class ReplaceRedditVideoManager {
         let thisClass = this;
         
         Array.from(videoPostElemWrappers)
-            .filter(m => !m.isAlreadyReplaced())
+            .filter(m => m.shouldReplace())
             .forEach(m => {
                 m.replaceRedditVideoPlayer();
                 

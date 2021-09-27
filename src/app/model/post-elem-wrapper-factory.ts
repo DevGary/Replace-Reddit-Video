@@ -4,7 +4,7 @@ import { PostElemWrapper } from "./post-elem-wrapper";
 
 export class PostElemWrapperFactory {
     
-    public createFromElem(postElem: Element): PostElemWrapper {
+    private createFromElem(postElem: Element): PostElemWrapper {
         if (this.isRedditVideoPost(postElem)) {
             return new RedditVideoPostElemWrapper(postElem);
         } 
@@ -27,7 +27,7 @@ export class PostElemWrapperFactory {
     
     public createFromElement(element:  Element): RedditVideoPostElemWrapper {
 
-        if (element.getElementsByTagName("video").length > 0) {
+        if (this.isRedditVideoPost(element)) {
 
             let postElem = element.getElementsByTagName("video")[0].closest("div.Post");
 

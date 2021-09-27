@@ -1,62 +1,83 @@
-﻿import { Utils } from "../util/utils";
-import { Hls } from "../../lib/hls-js/hls";
-import { Level, LEVEL_SWITCHED_Data, MANIFEST_PARSED_Data } from "../../lib/hls-js/util/types";
+﻿import { Level, LEVEL_SWITCHED_Data, MANIFEST_PARSED_Data } from "../util/types";
 import { MediaPlaybackListener } from "./interfaces/media-playback-listener";
 import { PlayableMediaElement } from "./interfaces/playable-media-element";
 const { v4: uuidv4 } = require('uuid');
+
 import '@webcomponents/custom-elements'
 
-// TODO: Refactor so this is only an element 
-// Refactor out replacement code, source generation, dont nest original native reddit player in this element
+const Hls = require('hls.js')
+// @ts-ignore
+import { BufferAppendingData } from "hls.js";
+
 export class ReplaceRedditVideoElem extends HTMLElement implements PlayableMediaElement {
 
     public static TAG = "replace-reddit-video";
+    public static PLAYER_TAG = "replace-reddit-video-player";
     
-    redditVideoElem: Element;
-
     autoplay: boolean;
     muted: boolean;
-    
-    forceDirectVideoPlayer: boolean;
-    forceHighestQuality: boolean;
+    forceMaxQuality: boolean;
     
     videoElem: HTMLVideoElement;
     
     private mediaPlaybackListeners: MediaPlaybackListener[];
-    
-    constructor(redditVideoElem: Element) {
-    
-        super();
-        
-        this.mediaPlaybackListeners = [];
-        this.id = uuidv4();
-        this.classList.add(ReplaceRedditVideoElem.getReplacementVideoElementContainerClass());
-        
-        this.redditVideoElem = redditVideoElem;
-        
-        // TODO
-        this.autoplay = false;
-        this.muted = true;
-    }
 
     static isTypeOf(elem: Element): elem is ReplaceRedditVideoElem {
         return elem instanceof ReplaceRedditVideoElem;
     }
-    
-    private getReplacementVideoElementClass() {
-        return "replace-reddit-video-video";
+
+    constructor(autoplay: boolean, muted: boolean, forceHlsMaxQuality: boolean) {
+        super();
+        
+        this.mediaPlaybackListeners = [];
+        this.id = uuidv4();
+        this.classList.add(ReplaceRedditVideoElem.TAG);
+        
+        this.autoplay = autoplay;
+        this.muted = muted;
+        this.forceMaxQuality = forceHlsMaxQuality;
+        
+        this.init();
     }
 
-    public static getReplacementVideoElementContainerClass() {
-        return "replace-reddit-video-container";
+    private init() {
+
+        let instance = this;
+
+        let videoElem = document.createElement("video");
+
+        videoElem.setAttribute("class", `${ReplaceRedditVideoElem.PLAYER_TAG}`);
+
+        // Always show controls if not autoplaying
+        if (!this.autoplay) {
+            videoElem.controls = true;
+        }
+        else {
+            videoElem.addEventListener("mouseover", function () {
+                videoElem.controls = true;
+            }, false);
+        }
+
+        videoElem.autoplay = this.autoplay;
+        videoElem.volume = 0.5;
+        videoElem.muted = this.muted;
+        videoElem.loop = true;
+        videoElem.preload = "metadata";
+        videoElem.addEventListener("play", function() {
+            instance.onPlay();
+        });
+
+        this.appendChild(videoElem);
+
+        this.videoElem = videoElem;
     }
 
-    private getReplacedIdentifier() {
-        return "replaced-by-replace-reddit-video";
-    }
-    
-    
-    private playWithHLSPlayer(redditNativeVideoElem: any, videoUrl: string) {
+    public setupForHLSVideo(hlsVideoUrl: string) {
+        
+        // TODO: DEBUG ONLY
+        // hlsVideoUrl = "https://v.redd.it/cm7xn5rinen71/HLSPlaylist.m3u8?a=1634215314%2CZTAzMzg4YzRkNTY4MjBlODFmNGQyNWY2NDQxMTk2MjFkZjZmYjcwYWEzZGU0ZDU3MTcwZjc2YTJiZmVjN2YyZA%3D%3D&amp;v=1&amp;f=hd";
+        console.log("Setting up for HLS Video")
+        
         let hls = new Hls();
 
         let videoElem = this.videoElem;
@@ -65,14 +86,14 @@ export class ReplaceRedditVideoElem extends HTMLElement implements PlayableMedia
         hls.on(Hls.Events.MEDIA_ATTACHED, () => {
 
             let availableLevels: Level[];
-            hls.loadSource(videoUrl);
-            console.log(`Attempting to play with HLS: ${videoUrl}`);
+            hls.loadSource(hlsVideoUrl);
+            console.log(`Attempting to play with HLS: ${hlsVideoUrl}`);
 
             hls.on(Hls.Events.MANIFEST_PARSED, (event: any, data: MANIFEST_PARSED_Data) => {
 
                 availableLevels = data.levels;
 
-                if (this.forceHighestQuality) {
+                if (this.forceMaxQuality) {
                     if (data.levels !== undefined) {
                         hls.firstLevel = data.levels.length - 1;
                     }
@@ -97,7 +118,7 @@ export class ReplaceRedditVideoElem extends HTMLElement implements PlayableMedia
 
                     console.log(`Trying to switch to level ${data.level}`);
 
-                    if (this.forceHighestQuality && data.level !== maxLevel) {
+                    if (this.forceMaxQuality && data.level !== maxLevel) {
 
                         console.log(`Forced to switch to max level ${maxLevel}`);
                         hls.currentLevel = availableLevels.length - 1;
@@ -118,7 +139,7 @@ export class ReplaceRedditVideoElem extends HTMLElement implements PlayableMedia
                 if (data.details === "levelLoadError") {
                     console.log('levelLoadError encountered, trying to reinitiate hls player');
                     hls.destroy();
-                    this.playWithHLSPlayer(redditNativeVideoElem, videoElem.getAttribute("video_url"));
+                    this.playWithHLSPlayer(videoElem.getAttribute("video_url"));
                 }
                 else if (data.fatal) {
                     switch (data.type) {
@@ -141,113 +162,12 @@ export class ReplaceRedditVideoElem extends HTMLElement implements PlayableMedia
         });
     }
 
-    private getRedditVideoUrlFromRedditVideoElem(redditVideoElem: any) {
+    public setupForHTML5Video(videoSources: HTMLSourceElement[]) {
+        console.log("Setting up for HTML 5 Video")
 
-        let redditNativeVideoElementsSourceHtml = redditVideoElem.getElementsByTagName("source")[0].outerHTML;
-        let videoUrl = redditNativeVideoElementsSourceHtml.split("src=\"")[1].split("\"")[0];
-
-        return videoUrl;
-    }
-
-    public replace() {
-
-        try {
-            let redditVideoElem = this.redditVideoElem;
-            
-            if (redditVideoElem.classList.contains(this.getReplacementVideoElementClass())) return;
-
-            let videoUrl = this.getRedditVideoUrlFromRedditVideoElem(redditVideoElem);
-            this.initReplaceRedditVideoElem();
-
-            this.replaceWithHTMLPlayer(redditVideoElem, videoUrl);
-
-            if (!this.forceDirectVideoPlayer && Utils.isHLSPlaylist(videoUrl) && Hls.isSupported()) {
-                this.replaceWithHLSPlayer(redditVideoElem, videoUrl);
-            }
-            else {
-                this.replaceWithHTMLPlayer(redditVideoElem, videoUrl);
-            }
-        } catch (e) {
+        for (let i = 0; i < videoSources.length; i++) {
+            this.videoElem.appendChild(videoSources[i]);
         }
-    }
-
-    private initReplaceRedditVideoElem() {
-
-        let instance = this;
-        
-        this.setAttribute("class", ReplaceRedditVideoElem.getReplacementVideoElementContainerClass());
-
-        let videoElem = document.createElement("video");
-        
-        videoElem.setAttribute("class", `${this.getReplacementVideoElementClass()}`);
-
-        // Always show controls if not autoplaying
-        if (!this.autoplay) {
-            videoElem.controls = true;
-        }
-        else {
-            videoElem.addEventListener("mouseover", function () {
-                videoElem.controls = true;
-            }, false);
-        }
-
-        videoElem.autoplay = this.autoplay;
-        videoElem.muted = this.muted;
-        videoElem.loop = true;
-        videoElem.preload = "metadata";
-        videoElem.addEventListener("play", function() {
-            instance.onPlay();
-        });
-
-        this.appendChild(videoElem);
-        
-        this.videoElem = videoElem;
-    }
-
-    private replaceWithHLSPlayer(redditNativeVideoElem: any, videoUrl: string) {
-
-        this.replaceRedditVideoElem(redditNativeVideoElem);
-
-        this.playWithHLSPlayer(redditNativeVideoElem, videoUrl);
-    }
-
-
-    private replaceWithHTMLPlayer(redditNativeVideoElem: any, videoUrl: string) {
-
-        let videoElem = this.videoElem;
-        
-        let videoUrlId = Utils.parseRedditVideoIdFromRedditVideoUrl(videoUrl);
-        let potentialFallbackUrlSources = Utils.buildPotentialFallbackUrlVideoSources(videoUrlId);
-
-        for (let i = 0; i < potentialFallbackUrlSources.length; i++) {
-            videoElem.appendChild(potentialFallbackUrlSources[i]);
-        }
-
-        this.replaceRedditVideoElem(redditNativeVideoElem);
-    }
-
-    private replaceRedditVideoElem(redditNativeVideoElem: any) {
-        // TODO: Find out if there is better way to destroy and cleanup old player?
-        if (redditNativeVideoElem.classList.contains(this.getReplacementVideoElementClass())) return;
-
-        this.disableRedditNativeVideoElem(redditNativeVideoElem);
-        
-        redditNativeVideoElem.parentElement.replaceWith(this);
-        
-        this.parentElement.append(redditNativeVideoElem);
-        
-        this.style.height = redditNativeVideoElem.offsetHeight + "px";
-
-        // For some reason, if we completely remove the element, the audio will start/stop playing on scroll.
-        // There is probably some function triggered on scroll that re-initializes the video if it is gone 
-        redditNativeVideoElem.style.display = "none";
-    }
-    
-    private disableRedditNativeVideoElem(redditNativeVideoElem: any) {
-        redditNativeVideoElem.children[0].src = this.getReplacedIdentifier(); // Prevents old player from playing
-        redditNativeVideoElem.src = this.getReplacedIdentifier(); // Prevents old player from playing
-        // @ts-ignore
-        redditNativeVideoElem.play = new function() {}; // Prevents old player from playing
     }
 
     addMediaPlaybackListener(mediaPlaybackListener: MediaPlaybackListener) {
