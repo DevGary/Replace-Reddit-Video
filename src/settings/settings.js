@@ -1,4 +1,7 @@
-﻿function save() {
+﻿// @ts-nocheck
+// TODO: Convert to Typescript
+
+function save() {
     let feedVideoAutoplay = document.getElementById('feedVideoAutoplay').checked;
     let feedVideoSound = document.getElementById('feedVideoSound').checked;
     let commentVideoAutoplay = document.getElementById('commentVideoAutoplay').checked;
